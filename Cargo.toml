@@ -1,0 +1,17 @@
+[workspace]
+members = ["server_app"]
+resolver = "2"
+
+[profile.dev]
+lto = false
+opt-level = 0
+overflow-checks = true
+incremental = true
+split-debuginfo = "unpacked"
+
+[profile.release]
+lto = "thin"
+opt-level = 'z'
+overflow-checks = false
+incremental = false
+panic = "abort"
