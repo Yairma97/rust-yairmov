@@ -1,16 +1,16 @@
 [package]
-name = "domain"
+name = "service"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "domain"
+name = "service"
 path = "src/lib.rs"
 
 [dependencies]
 vars = { path = "../vars" }
-repository = { path = "../repository" }
+database = { path = "../database" }
 util = { path = "../util" }
 
 serde = { version = "1.0", features = ["derive"] }

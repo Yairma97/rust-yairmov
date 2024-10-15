@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 vars = { path = "../vars" }
-domain = { path = "../domain" }
+service = { path = "../service" }
 util = { path = "../util", features = ["jwt"] }
 
 axum = { version = "0.7", features = ["macros"] }

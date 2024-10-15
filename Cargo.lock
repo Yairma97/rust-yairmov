@@ -72,7 +72,6 @@ dependencies = [
  "axum 0.7.7",
  "axum-extra",
  "chrono",
- "domain",
  "headers",
  "http-body 1.0.1",
  "http-body-util",
@@ -81,6 +80,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_json",
+ "service",
  "thiserror",
  "tokio",
  "tower 0.5.1",
@@ -576,6 +576,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "database"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "once_cell",
+ "serde",
+ "sql-builder",
+ "sqlx",
+ "tokio",
+ "tracing",
+ "vars",
+]
+
+[[package]]
 name = "der"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -605,24 +621,6 @@ dependencies = [
  "const-oid",
  "crypto-common",
  "subtle",
-]
-
-[[package]]
-name = "domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "chrono",
- "repository",
- "ring",
- "serde",
- "serde_json",
- "thiserror",
- "tracing",
- "util",
- "vars",
 ]
 
 [[package]]
@@ -1941,22 +1939,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
-name = "repository"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "once_cell",
- "serde",
- "sql-builder",
- "sqlx",
- "tokio",
- "tracing",
- "vars",
-]
-
-[[package]]
 name = "reqwest"
 version = "0.12.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2228,10 +2210,28 @@ version = "0.1.0"
 dependencies = [
  "api",
  "console-subscriber",
+ "database",
  "dotenv",
  "extra",
- "repository",
  "tokio",
+]
+
+[[package]]
+name = "service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "chrono",
+ "database",
+ "ring",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+ "util",
+ "vars",
 ]
 
 [[package]]
