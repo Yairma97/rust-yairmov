@@ -27,22 +27,13 @@ pub fn routes(state: AppState) -> Router {
         .layer(HandleErrorLayer::new(handle_error))
         .timeout(Duration::from_secs(30))
         .layer(TraceLayer::new_for_http())
-        .layer(middleware::from_fn(print_request_response))
-        .layer(middleware::from_fn(normalizate_response));
+        .layer(middleware::from_fn(print_request_response));
 
     Router::new()
         // users
         .nest("/users", crate::users::route::router())
         .layer(middleware_stack.into_inner())
         .with_state(state)
-}
-async fn normalizate_response(
-    req: Request,
-    next: Next,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let res = next.run(req).await;
-    let _ = success(res);
-    Ok(res)
 }
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>());
