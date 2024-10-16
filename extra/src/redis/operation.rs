@@ -2,7 +2,6 @@ use crate::redis::REDIS;
 use redis::{aio::ConnectionManager, FromRedisValue, RedisError, ToRedisArgs};
 use tracing::{debug, warn};
 
-`
 pub async fn set<K, V>(key: K, value: V) -> String
 where
     K: ToRedisArgs,

@@ -1,5 +1,5 @@
+use std::any::Any;
 use crate::{
-    app_response::{AppError, ErrorMessage},
     AppState,
 };
 use axum::{
@@ -14,8 +14,12 @@ use axum::{
 use http_body_util::BodyExt;
 use serde_json::json;
 use std::time::Duration;
+use serde::Serialize;
 use tower::{BoxError, ServiceBuilder};
 use tower_http::trace::TraceLayer;
+use crate::app_error::AppError;
+use crate::app_response::{GlobalResponse, new, success};
+use crate::me::MeResponse;
 
 pub fn routes(state: AppState) -> Router {
     // don't change layer order, or errors happen...
@@ -23,19 +27,26 @@ pub fn routes(state: AppState) -> Router {
         .layer(HandleErrorLayer::new(handle_error))
         .timeout(Duration::from_secs(30))
         .layer(TraceLayer::new_for_http())
-        .layer(middleware::from_fn(print_request_response));
+        .layer(middleware::from_fn(print_request_response))
+        .layer(middleware::from_fn(normalizate_response));
 
     Router::new()
-        .merge(crate::app_index::get_index())
         // users
-        .merge(crate::login::post_login())
-        .merge(crate::me::get_me())
-        .merge(crate::change_password::put_change_password())
-        .merge(crate::change_username::put_change_username())
+        .nest("/users", crate::users::route::router())
         .layer(middleware_stack.into_inner())
         .with_state(state)
 }
-
+async fn normalizate_response(
+    req: Request,
+    next: Next,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let res = next.run(req).await;
+    let _ = success(res);
+    Ok(res)
+}
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>());
+}
 async fn print_request_response(
     req: Request,
     next: Next,
@@ -57,9 +68,9 @@ async fn buffer_and_print<B>(
     direction: &str,
     body: B,
 ) -> Result<Bytes, (StatusCode, String)>
-where
-    B: axum::body::HttpBody<Data = Bytes>,
-    B::Error: std::fmt::Display,
+    where
+        B: axum::body::HttpBody<Data=Bytes>,
+        B::Error: std::fmt::Display,
 {
     let bytes = match body.collect().await {
         Ok(collected) => collected.to_bytes(),
@@ -82,15 +93,6 @@ async fn handle_error(error: BoxError) -> impl IntoResponse {
     if error.is::<tower::timeout::error::Elapsed>() {
         Ok(StatusCode::REQUEST_TIMEOUT)
     } else {
-        Err(AppError(
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!(ErrorMessage {
-                    message: format!("Unhandled internal error: {}", error),
-                    code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                })),
-            )
-                .into_response(),
-        ))
+        Err(AppError::internal_server_error(format!("Unhandled internal error: {}",error)))
     }
 }

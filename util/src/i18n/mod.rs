@@ -11,6 +11,7 @@ use self::lang::ALL_LANGUAGES;
 /// ```
 /// // a-b-c = "blabla";
 ///
+/// use util::i18n::i18n;
 /// let s = i18n("a-b-c");
 /// println!("{}", s);
 /// ```
@@ -52,6 +53,7 @@ pub fn i18n_with_vars(key: &str, vars: Vec<String>) -> String {
 /// ```
 /// // a-b-c = "blabla";
 ///
+/// use util::i18n::i18n_with_language;
 /// let s = i18n_with_language("a-b-c", "en");
 /// println!("{}", s);
 /// ```
@@ -78,6 +80,7 @@ pub fn i18n_with_language(key: &str, language: &str) -> String {
 /// ```
 /// // a-b-c = "blabla {0}";
 ///
+/// use util::i18n::i18n_with_language_vars;
 /// let s = i18n_with_language_vars("a-b-c", "en", vec!["aaa".to_string()]);
 /// println!("{}", s);
 /// ```
@@ -116,13 +119,13 @@ mod test {
 
     #[test]
     fn test_i18n_with_vars() {
-        std::env::set_var("I18N_LANGUAGE", "en");
+        unsafe { std::env::set_var("I18N_LANGUAGE", "en"); }
 
         let r = i18n_with_vars("adventure-not-exist", vec!["2222".to_string()]);
         println!("adventure-not-exist = {}", r);
         assert_eq!("There is no adventure with id 2222.", r);
 
-        std::env::set_var("I18N_LANGUAGE", "zh_CN");
+        unsafe { std::env::set_var("I18N_LANGUAGE", "zh_CN"); }
 
         let r = i18n_with_vars("adventure-not-exist", vec!["2222".to_string()]);
         println!("adventure-not-exist = {}", r);

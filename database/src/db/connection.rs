@@ -1,15 +1,16 @@
 use std::env;
 
-use sqlx::{Error, Executor, Postgres, Transaction};
+use sqlx::{Error, Executor, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::pool::PoolOptions;
 use tracing::debug;
 
-use crate::db::{PoolOptions, SqlPool};
+
 
 use super::REPOSITORY;
 
 #[derive(Clone, Debug)]
 pub struct Repo {
-    pub(crate) connection_pool: SqlPool,
+    pub(crate) connection_pool: PgPool,
 }
 
 impl Repo {
@@ -21,7 +22,7 @@ impl Repo {
         let connection_pool = PoolOptions::new()
             .max_connections(10)
             .min_connections(1)
-            .after_connect(|conn, _meta| {
+            .after_connect(|conn:&mut PgConnection, _meta| {
                 Box::pin(async move {
                     conn.execute("SET TIME ZONE 'Asia/Shanghai';").await?;
 

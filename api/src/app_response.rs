@@ -1,56 +1,34 @@
-use axum::{
-    response::{IntoResponse, Response},
-    Json,
-};
-use hyper::StatusCode;
+use axum::{Json};
 use serde::Serialize;
-use serde_json::json;
 
-pub struct AppError(pub Response);
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        self.0
-    }
-}
-
-impl AppError {
-    pub(crate) fn forbidden(str: String) -> Self {
-        Self::error_response(str, StatusCode::FORBIDDEN)
-    }
-
-    pub(crate) fn internal_server_error(str: String) -> Self {
-        Self::error_response(str, StatusCode::INTERNAL_SERVER_ERROR)
-    }
-
-    pub(crate) fn not_found(str: String) -> Self {
-        Self::error_response(str, StatusCode::NOT_FOUND)
-    }
-
-    pub(crate) fn unauthorized(str: String) -> Self {
-        Self::error_response(str, StatusCode::UNAUTHORIZED)
-    }
-
-    pub(crate) fn bad_request(str: String) -> Self {
-        Self::error_response(str, StatusCode::BAD_REQUEST)
-    }
-
-    pub(crate) fn error_response(message: String, code: StatusCode) -> Self {
-        Self(
-            (
-                code,
-                Json(json!(ErrorMessage {
-                    message,
-                    code: code.as_u16(),
-                })),
-            )
-                .into_response(),
-        )
-    }
-}
 
 #[derive(Serialize)]
-pub struct ErrorMessage {
-    pub(crate) code: u16,
-    pub(crate) message: String,
+pub struct GlobalResponse<T: Serialize> {
+    pub code: u16,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<T>,
+
 }
+
+pub fn new<T: Serialize>(code: u16, msg: &str, data: Option<T>) -> Json<GlobalResponse<T>> {
+    Json(GlobalResponse { code, message: msg.to_string(), data })
+}
+
+pub fn success<T: Serialize>(data: T) -> Json<GlobalResponse<T>> {
+    new(0, "OK", Some(data))
+}
+
+pub fn success_empty<T: Serialize>() -> Json<GlobalResponse<T>> {
+    new(0, "OK", None)
+}
+
+pub fn fail<T: Serialize>(msg: &str) -> Json<GlobalResponse<T>> {
+    fail_with_code(50000, msg)
+}
+
+pub fn fail_with_code<T: Serialize>(code: u16, msg: &str) -> Json<GlobalResponse<T>> {
+    new(code, msg, None)
+}
+
+

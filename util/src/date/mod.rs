@@ -227,6 +227,8 @@ impl Date {
 #[cfg(test)]
 mod tests {
     use crate::Date;
+    use crate::date::Date;
+
     #[test]
     fn test_today() {
         let now = Date::get_now();

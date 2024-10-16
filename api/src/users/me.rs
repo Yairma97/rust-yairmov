@@ -1,8 +1,10 @@
-use crate::{app_request::JwtAuth, app_response::AppError, AppState};
+use crate::{app_request::JwtAuth, AppState};
 use axum::{extract::State, Json};
-use domain::{GetUserError, UsersManager};
-use macros::router;
+use axum::response::IntoResponse;
 use serde::Serialize;
+use tracing::info;
+use crate::app_error::AppError;
+use crate::app_response::{GlobalResponse, success};
 
 #[derive(Serialize)]
 pub struct MeResponse {
@@ -10,22 +12,14 @@ pub struct MeResponse {
     pub roles: Vec<String>,
 }
 
-#[tracing::instrument(skip(auth_user, state))]
-#[router(path = "/api/users/me")]
-async fn me(
-    JwtAuth(auth_user): JwtAuth,
+#[tracing::instrument()]
+pub async fn me(
+    JwtAuth(user_info): JwtAuth,
     State(state): State<AppState>,
-) -> Result<Json<MeResponse>, AppError> {
-    let manager = &state.users_manager;
-
-    match manager.get_user_by_username(auth_user.get_name()).await {
-        Ok(user) => Ok(MeResponse {
-            username: user.username,
-            roles: user.roles,
-        }
-        .into()),
-        Err(_) => Err(AppError::from(GetUserError::NotFound {
-            username: auth_user.get_name(),
-        })),
-    }
+) -> Result<impl IntoResponse, AppError> {
+    info!("state:{:?}",state);
+    Ok(success(MeResponse {
+        username: "dd".to_string(),
+        roles: vec!["dd".to_string()],
+    }))
 }

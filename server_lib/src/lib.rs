@@ -9,7 +9,7 @@ pub async fn start() {
     console_subscriber::init();
 
     #[cfg(feature = "database_lib")]
-    repository::db::Repo::create().await;
+    database::db::Repo::create().await;
 
     #[cfg(feature = "api_lib")]
     api::start().await;

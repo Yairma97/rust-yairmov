@@ -1,8 +1,7 @@
 use crate::app_routes;
-use domain::{
-    UsersManagerImpl,
-};
+
 use std::{env, net::SocketAddr, sync::Arc};
+use service::UsersManagerImpl;
 
 #[derive(Clone, Debug)]
 pub struct AppStateRaw {

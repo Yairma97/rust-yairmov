@@ -2,7 +2,6 @@ use std::borrow::Cow;
 
 use crate::{
     app_error::{JWTError, ValidateError},
-    app_response::AppError,
 };
 use axum::{
     async_trait,
@@ -10,20 +9,19 @@ use axum::{
     http::request::Parts,
     Json,
 };
-use axum_extra::TypedHeader;
-use headers::{authorization::Bearer, Authorization};
 use serde::de::DeserializeOwned;
 use util::i18n::i18n;
 use util::jwt::{decode_token, Claims};
 use validator::{Validate, ValidationError, ValidationErrors};
 use vars::{to_item_type_name, to_journey_destiny_name, to_source_name};
+use crate::app_error::AppError;
 
 pub struct JwtAuth(pub Claims);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for JwtAuth
-where
-    S: Send + Sync,
+    where
+        S: Send + Sync,
 {
     type Rejection = AppError;
 
@@ -31,16 +29,15 @@ where
         req: &mut Parts,
         state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let TypedHeader(Authorization(bearer)) =
-            TypedHeader::<Authorization<Bearer>>::from_request_parts(
-                req, state,
-            )
-            .await
-            .map_err(|_| JWTError::Invalid)?;
-
-        match decode_token(bearer.token()) {
-            Ok(k) => Ok(Self(k)),
-            Err(_) => Err(AppError::from(JWTError::Invalid)),
+        let headers = req.to_owned().headers;
+        match headers.get("Authorization") {
+            None => {
+                Err(AppError::from(JWTError::Missing))
+            }
+            Some(auth) => match  decode_token(auth.to_str()?) {
+                Ok(k) => Ok(Self(k)),
+                Err(_) => Err(AppError::from(JWTError::Missing))
+            }
         }
     }
 }
@@ -50,9 +47,9 @@ pub struct ValidatedQuery<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequest<S> for ValidatedQuery<T>
-where
-    T: DeserializeOwned + Validate,
-    S: Send + Sync,
+    where
+        T: DeserializeOwned + Validate,
+        S: Send + Sync,
 {
     type Rejection = AppError;
 
@@ -77,9 +74,9 @@ pub struct ValidatedJson<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequest<S> for ValidatedJson<T>
-where
-    T: DeserializeOwned + Validate,
-    S: Send + Sync,
+    where
+        T: DeserializeOwned + Validate,
+        S: Send + Sync,
 {
     type Rejection = AppError;
 
@@ -103,9 +100,9 @@ pub struct ValidatedPath<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequest<S> for ValidatedPath<T>
-where
-    T: DeserializeOwned + Validate + Send,
-    S: Send + Sync,
+    where
+        T: DeserializeOwned + Validate + Send,
+        S: Send + Sync,
 {
     type Rejection = AppError;
 

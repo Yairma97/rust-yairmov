@@ -1,8 +1,57 @@
-use crate::app_response::AppError;
+use crate::app_response::{GlobalResponse};
 use axum::extract::rejection::{JsonRejection, PathRejection, QueryRejection};
-use domain::{DomainError, GetUserError, };
-use macros::FromError;
+use axum::http::header::ToStrError;
+use axum::http::StatusCode;
+use axum::Json;
+use axum::response::{IntoResponse, Response};
+use serde_json::json;
+use thiserror::Error;
 use validator::ValidationErrors;
+use service::{DomainError, GetUserError};
+
+pub struct AppError(pub Response);
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        self.0
+    }
+}
+
+impl AppError {
+    pub(crate) fn forbidden(str: String) -> Self {
+        Self::error_response(str, StatusCode::FORBIDDEN)
+    }
+
+    pub(crate) fn internal_server_error(str: String) -> Self {
+        Self::error_response(str, StatusCode::INTERNAL_SERVER_ERROR)
+    }
+
+    pub(crate) fn not_found(str: String) -> Self {
+        Self::error_response(str, StatusCode::NOT_FOUND)
+    }
+
+    pub(crate) fn unauthorized(str: String) -> Self {
+        Self::error_response(str, StatusCode::UNAUTHORIZED)
+    }
+
+    pub(crate) fn bad_request(str: String) -> Self {
+        Self::error_response(str, StatusCode::BAD_REQUEST)
+    }
+
+    pub(crate) fn error_response(message: String, code: StatusCode) -> Self {
+        Self(
+            (
+                code,
+                Json(json!(GlobalResponse::<String> {
+                    message,
+                    code: code.as_u16(),
+                    data: None
+                })),
+            )
+                .into_response(),
+        )
+    }
+}
 
 #[derive(Debug)]
 pub enum ValidateError {
@@ -12,32 +61,11 @@ pub enum ValidateError {
     AxumPathRejection(PathRejection),
 }
 
-#[derive(Debug, FromError)]
-pub enum LoginError {
-    // #[error("{}", i18n("login-password-not-correct"))]
-    #[from_error(code = "login-password-not-correct", status = "forbidden")]
-    WrongPassword,
-    // #[from_error(code = "login-user-not-exist", status = "unauthorized")]
-    // UserNotExist,
-}
-
-#[derive(FromError, Debug)]
-pub enum RegistryError {
-    #[from_error(code = "registry-user-exist", status = "forbidden")]
-    UserExist,
-}
-
-#[derive(FromError, Debug)]
-pub enum ChangeUsernameError {
-    #[from_error(code = "user-name-exist", status = "forbidden")]
-    UsernameExist,
-}
-
-#[derive(FromError, Debug)]
+#[derive(Error, Debug)]
 pub enum JWTError {
-    // #[error("{}", i18n("jwt-missing"))]
-    // Missing,
-    #[from_error(code = "jwt-invalid", status = "unauthorized")]
+    #[error("{}", "jwt-missing")]
+    Missing,
+    #[error("{}", "jwt-invalid")]
     Invalid,
 }
 
@@ -80,4 +108,20 @@ impl From<GetUserError> for AppError {
     }
 }
 
+impl From<JWTError> for AppError {
+    fn from(e: JWTError) -> Self {
+        match &e {
+            JWTError::Invalid => Self::unauthorized(e.to_string()),
+            JWTError::Missing => Self::forbidden(e.to_string())
+        }
+    }
+}
+
+impl From<ToStrError> for AppError {
+    fn from(e: ToStrError) -> Self {
+        match &e {
+            ToStrError { .. } => Self::internal_server_error(e.to_string())
+        }
+    }
+}
 
