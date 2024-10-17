@@ -1,9 +1,10 @@
-
+use thiserror::Error;
+use database::db::error::DbErr;
 use util::i18n::i18n;
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Error, Debug)]
 #[error("{}", i18n("something-wrong"))]
-pub struct DomainError {
-    #[from]
-    source: anyhow::Error,
+pub enum  DomainError {
+    #[error("ServiceError")]
+    DbErr(#[from] DbErr),
 }

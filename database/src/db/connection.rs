@@ -1,43 +1,34 @@
 use std::env;
-
-use sqlx::{Error, Executor, PgConnection, PgPool, Postgres, Transaction};
-use sqlx::pool::PoolOptions;
-use tracing::debug;
-
-
-
-use super::REPOSITORY;
+use std::time::Duration;
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use tracing::{debug, log};
+use crate::db::REPOSITORY;
 
 #[derive(Clone, Debug)]
 pub struct Repo {
-    pub(crate) connection_pool: PgPool,
+    pub(crate) sea_orm: DatabaseConnection,
 }
 
 impl Repo {
     async fn new(database_url: &str) -> Self {
-        Self::from_pool_builder(database_url).await
+        Self::sea_orm(database_url).await
     }
 
-    async fn from_pool_builder(database_url: &str) -> Self {
-        let connection_pool = PoolOptions::new()
-            .max_connections(10)
-            .min_connections(1)
-            .after_connect(|conn:&mut PgConnection, _meta| {
-                Box::pin(async move {
-                    conn.execute("SET TIME ZONE 'Asia/Shanghai';").await?;
 
-                    Ok(())
-                })
-            })
-            .connect(database_url)
-            .await
-            .expect("init database error");
+    async fn sea_orm(database_url: &str) -> Self {
+        let mut opt = ConnectOptions::new(database_url);
+        opt.max_connections(100)
+            .min_connections(5)
+            .connect_timeout(Duration::from_secs(8))
+            .acquire_timeout(Duration::from_secs(8))
+            .idle_timeout(Duration::from_secs(8))
+            .max_lifetime(Duration::from_secs(8))
+            .sqlx_logging(true)
+            .sqlx_logging_level(log::LevelFilter::Debug); // Setting default PostgreSQL schema
 
-        debug!("connection pool inited...");
-        debug!("database_url: {}", database_url);
-        Repo { connection_pool }
+        let db = Database::connect(opt).await.unwrap();
+        Repo { sea_orm: db }
     }
-
     #[tracing::instrument]
     pub async fn create() {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -47,10 +38,5 @@ impl Repo {
         REPOSITORY.set(repo.await).expect("db connection must set");
 
         debug!("db connection created");
-    }
-
-    pub async fn transaction<'c>() -> Result<Transaction<'static, Postgres>, Error> {
-        let pool = &REPOSITORY.get().unwrap().connection_pool;
-        pool.begin().await
     }
 }

@@ -4,17 +4,17 @@ use std::{env, net::SocketAddr, sync::Arc};
 use service::UsersManagerImpl;
 
 #[derive(Clone, Debug)]
-pub struct AppStateRaw {
+pub struct ServiceImpls {
     pub users_manager: UsersManagerImpl,
 }
 
-pub type AppState = Arc<AppStateRaw>;
+pub type AppState = Arc<ServiceImpls>;
 
 pub async fn start() {
 
     let users_manager = UsersManagerImpl;
 
-    let app_state = Arc::new(AppStateRaw {
+    let app_state = Arc::new(ServiceImpls {
         users_manager,
     });
     let bind_address: SocketAddr = env::var("BIND_ADDRESS")

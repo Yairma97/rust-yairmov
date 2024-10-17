@@ -30,7 +30,7 @@ pub fn routes(state: AppState) -> Router {
         .layer(middleware::from_fn(print_request_response));
 
     Router::new()
-        // users
+        // repo
         .nest("/users", crate::users::route::router())
         .layer(middleware_stack.into_inner())
         .with_state(state)

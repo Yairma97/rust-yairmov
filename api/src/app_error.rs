@@ -71,7 +71,9 @@ pub enum JWTError {
 
 impl From<DomainError> for AppError {
     fn from(e: DomainError) -> AppError {
-        Self::internal_server_error(e.to_string())
+        match &e {
+            DomainError::DbErr(_) => {Self::internal_server_error(e.to_string())}
+        }
     }
 }
 

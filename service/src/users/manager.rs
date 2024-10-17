@@ -1,12 +1,12 @@
 use std::future::Future;
+use database::db::error::DbErr;
+use database::entity::admin_user;
 use crate::DomainError;
 
-use crate::models::{RegistryUsers, Users};
 
 pub trait UsersManager {
-    fn add_user(
+   async fn get_user(
         &self,
-        reg_user: RegistryUsers,
-    ) -> impl Future<Output = Result<Users, DomainError>> + Send;
-
+        id: &str,
+    ) -> Result<admin_user::Model, DbErr>;
 }
