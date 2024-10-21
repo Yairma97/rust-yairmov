@@ -1,8 +1,8 @@
 use once_cell::sync::Lazy;
 use time::{format_description, OffsetDateTime, UtcOffset};
 use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
+use tracing_subscriber::prelude::*;
 
 const TS_S: &str = "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6] \
                     [offset_hour sign:mandatory]:[offset_minute]";
@@ -66,7 +66,8 @@ pub fn log_create() -> (WorkerGuard, WorkerGuard) {
 
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new("debug"))
-        .unwrap();
+        .unwrap()
+        .add_directive("sea_orm::driver=debug".parse().unwrap());
 
     // let subscriber =
     let default_layer = tracing_subscriber::registry()

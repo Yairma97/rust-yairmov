@@ -1,4 +1,4 @@
-use sea_orm::{ActiveModelTrait, EntityTrait, TryIntoModel};
+use sea_orm::{EntityTrait, TryIntoModel};
 use sea_orm::ActiveValue::Set;
 use tracing::info;
 

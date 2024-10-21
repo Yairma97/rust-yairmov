@@ -9,7 +9,6 @@ name = "service"
 path = "src/lib.rs"
 
 [dependencies]
-vars = { path = "../vars" }
 database = { path = "../database" }
 util = { path = "../util" }
 

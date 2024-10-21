@@ -106,7 +106,6 @@ dependencies = [
  "tracing",
  "util",
  "validator",
- "vars",
  "wax",
 ]
 
@@ -766,7 +765,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "vars",
 ]
 
 [[package]]
@@ -2820,7 +2818,6 @@ dependencies = [
  "thiserror",
  "tracing",
  "util",
- "vars",
 ]
 
 [[package]]
@@ -3843,16 +3840,6 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
-
-[[package]]
-name = "vars"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "once_cell",
- "serde",
- "tracing",
-]
 
 [[package]]
 name = "vcpkg"
