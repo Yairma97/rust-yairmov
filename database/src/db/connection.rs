@@ -1,7 +1,9 @@
 use std::env;
 use std::time::Duration;
+
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tracing::{debug, log};
+
 use crate::db::REPOSITORY;
 
 #[derive(Clone, Debug)]
@@ -23,8 +25,8 @@ impl Repo {
             .acquire_timeout(Duration::from_secs(8))
             .idle_timeout(Duration::from_secs(8))
             .max_lifetime(Duration::from_secs(8))
-            .sqlx_logging(true)
-            .sqlx_logging_level(log::LevelFilter::Debug); // Setting default PostgreSQL schema
+            .sqlx_logging(false)
+            .sqlx_logging_level(log::LevelFilter::Info); // Setting default PostgreSQL schema
 
         let db = Database::connect(opt).await.unwrap();
         Repo { sea_orm: db }

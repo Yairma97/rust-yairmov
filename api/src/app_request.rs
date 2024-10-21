@@ -1,8 +1,5 @@
 use std::borrow::Cow;
 
-use crate::{
-    app_error::{JWTError, ValidateError},
-};
 use axum::{
     async_trait,
     extract::{FromRequest, FromRequestParts, Path, Query, Request},
@@ -10,10 +7,13 @@ use axum::{
     Json,
 };
 use serde::de::DeserializeOwned;
-use util::i18n::i18n;
-use util::jwt::{decode_token, Claims};
-use validator::{Validate, ValidationError, ValidationErrors};
-use vars::{to_item_type_name, to_journey_destiny_name, to_source_name};
+use validator::{Validate, ValidationErrors};
+use wax::Pattern;
+
+use util::jwt::{Claims, decode_token};
+
+use crate::app_config::CONFIG;
+use crate::app_error::{JWTError, ValidateError};
 use crate::app_error::AppError;
 
 pub struct JwtAuth(pub Claims);
@@ -27,8 +27,16 @@ impl<S> FromRequestParts<S> for JwtAuth
 
     async fn from_request_parts(
         req: &mut Parts,
-        state: &S,
+        _state: &S,
     ) -> Result<Self, Self::Rejection> {
+        let config = CONFIG.get().unwrap();
+        let vec = config.global.ignores.iter();
+        let path = req.uri.path();
+        for ignore_url in vec {
+            if wax::Glob::new(ignore_url)?.is_match(path) {
+                return Ok(Self(Default::default()))
+            }
+        }
         let headers = req.to_owned().headers;
         match headers.get("Authorization") {
             None => {
@@ -128,9 +136,9 @@ fn to_new_validation_errors(e: ValidationErrors) -> ValidationErrors {
         for validation_err in vec_validation_error {
             tracing::debug!("validation_err.code: {}", validation_err.code);
             let mut new_validation_error = validation_err.clone();
-            new_validation_error.message = Some(Cow::from(i18n(
-                new_validation_error.code.clone().into_owned().as_str(),
-            )));
+            new_validation_error.message = Some(Cow::from(
+                new_validation_error.code.clone().to_string(),
+            ));
             new_validation_errors.add(field, new_validation_error);
         }
     }
@@ -140,32 +148,4 @@ fn to_new_validation_errors(e: ValidationErrors) -> ValidationErrors {
     );
 
     new_validation_errors
-}
-
-pub fn validate_source(source: u8) -> Result<(), ValidationError> {
-    if to_source_name(source.into()).is_empty() {
-        return Err(ValidationError::new("adventure-journey-valid-source"));
-    }
-
-    Ok(())
-}
-
-pub fn validate_journey_destiny(
-    journey_destiny: &str,
-) -> Result<(), ValidationError> {
-    if to_journey_destiny_name(journey_destiny).is_empty() {
-        return Err(ValidationError::new(
-            "adventure-journey-valid-journey_destiny",
-        ));
-    }
-
-    Ok(())
-}
-
-pub fn validate_item_id(item_id: u8) -> Result<(), ValidationError> {
-    if to_item_type_name(item_id.into()).is_empty() {
-        return Err(ValidationError::new("adventure-list-valid-item_id"));
-    }
-
-    Ok(())
 }

@@ -1,7 +1,5 @@
-use std::any::Any;
-use crate::{
-    AppState,
-};
+use std::time::Duration;
+
 use axum::{
     body::{Body, Bytes},
     error_handling::HandleErrorLayer,
@@ -9,17 +7,14 @@ use axum::{
     http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Response},
-    Json, Router,
+    Router,
 };
 use http_body_util::BodyExt;
-use serde_json::json;
-use std::time::Duration;
-use serde::Serialize;
 use tower::{BoxError, ServiceBuilder};
 use tower_http::trace::TraceLayer;
+
 use crate::app_error::AppError;
-use crate::app_response::{GlobalResponse, new, success};
-use crate::me::MeResponse;
+use crate::AppState;
 
 pub fn routes(state: AppState) -> Router {
     // don't change layer order, or errors happen...
@@ -34,9 +29,6 @@ pub fn routes(state: AppState) -> Router {
         .nest("/users", crate::users::route::router())
         .layer(middleware_stack.into_inner())
         .with_state(state)
-}
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>());
 }
 async fn print_request_response(
     req: Request,

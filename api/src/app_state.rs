@@ -1,7 +1,9 @@
-use crate::app_routes;
-
 use std::{env, net::SocketAddr, sync::Arc};
+
 use service::UsersManagerImpl;
+
+use crate::app_config::AppConfig;
+use crate::app_routes;
 
 #[derive(Clone, Debug)]
 pub struct ServiceImpls {
@@ -10,7 +12,9 @@ pub struct ServiceImpls {
 
 pub type AppState = Arc<ServiceImpls>;
 
+
 pub async fn start() {
+    AppConfig::init("app.yaml");
 
     let users_manager = UsersManagerImpl;
 

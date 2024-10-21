@@ -1,11 +1,13 @@
-use crate::{app_request::JwtAuth, AppState};
-use axum::{extract::State, Json};
+use axum::extract::State;
 use axum::response::IntoResponse;
 use serde::Serialize;
 use tracing::info;
+
 use service::UsersManager;
+
+use crate::{app_request::JwtAuth, AppState};
 use crate::app_error::AppError;
-use crate::app_response::{GlobalResponse, success};
+use crate::app_response::success;
 
 #[derive(Serialize)]
 pub struct MeResponse {
@@ -13,7 +15,7 @@ pub struct MeResponse {
     pub roles: Vec<String>,
 }
 
-#[tracing::instrument()]
+#[tracing::instrument(skip(state))]
 pub async fn me(
     JwtAuth(user_info): JwtAuth,
     State(state): State<AppState>,

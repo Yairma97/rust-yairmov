@@ -1,4 +1,3 @@
-use crate::app_response::{GlobalResponse};
 use axum::extract::rejection::{JsonRejection, PathRejection, QueryRejection};
 use axum::http::header::ToStrError;
 use axum::http::StatusCode;
@@ -7,7 +6,10 @@ use axum::response::{IntoResponse, Response};
 use serde_json::json;
 use thiserror::Error;
 use validator::ValidationErrors;
+
 use service::{DomainError, GetUserError};
+
+use crate::app_response::GlobalResponse;
 
 pub struct AppError(pub Response);
 
@@ -63,9 +65,9 @@ pub enum ValidateError {
 
 #[derive(Error, Debug)]
 pub enum JWTError {
-    #[error("{}", "jwt-missing")]
+    #[error("{}", "验证失败，请重新登录")]
     Missing,
-    #[error("{}", "jwt-invalid")]
+    #[error("{}", "未认证")]
     Invalid,
 }
 
@@ -126,4 +128,10 @@ impl From<ToStrError> for AppError {
         }
     }
 }
-
+impl From<wax::BuildError> for AppError {
+    fn from(e: wax::BuildError) -> Self {
+        match &e {
+            wax::BuildError { .. } => Self::forbidden(e.to_string())
+        }
+    }
+}
