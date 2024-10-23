@@ -5,10 +5,6 @@ edition = "2021"
 autotests = false
 include = ["src/**/*", "Cargo.toml", "README.md"]
 description = "A example of rust web server to develop api"
-documentation = ""
-homepage = ""
-keywords = ["web", "api", "db"]
-categories = []
 license = "MIT"
 readme = "README.md"
 
@@ -20,9 +16,5 @@ path = "src/main.rs"
 name = "app"
 
 [dependencies]
-server_lib = { path = "../server_lib", default-features = false, features = [
-    "database_lib",
-    "api_lib",
-] }
-
+server_lib = { path = "../server_lib"}
 tokio = { version = "1", features = ["macros"] }

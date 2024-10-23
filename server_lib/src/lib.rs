@@ -5,12 +5,7 @@ pub async fn start() {
     // issue: https://github.com/tokio-rs/tracing/issues/971
     let (_guard_file, _guard_stderr) = extra::init().await;
 
-    #[cfg(feature = "tokio_console")]
-    console_subscriber::init();
-
-    #[cfg(feature = "database_lib")]
     database::db::Repo::create().await;
 
-    #[cfg(feature = "api_lib")]
     api::start().await;
 }

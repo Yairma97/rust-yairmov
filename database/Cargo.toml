@@ -10,7 +10,7 @@ name = "database"
 path = "src/lib.rs"
 
 [dependencies]
-util = { path = "../util" }
+
 sqlx = { version = "0.8.2", default-features = false, features = [
     "runtime-tokio-native-tls",
     "macros",

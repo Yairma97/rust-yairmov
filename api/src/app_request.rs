@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use validator::{Validate, ValidationErrors};
 use wax::Pattern;
 
-use util::jwt::{Claims, decode_token};
+use extra::jwt::{Claims, decode_token};
 
 use crate::app_config::CONFIG;
 use crate::app_error::{JWTError, ValidateError};

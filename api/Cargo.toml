@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 service = { path = "../service" }
-util = { path = "../util" }
+extra = { path = "../extra",features = ["default"] }
+
 
 axum = { version = "0.7", features = ["macros"] }
 axum-extra = { version = "0.9", features = ["typed-header"] }

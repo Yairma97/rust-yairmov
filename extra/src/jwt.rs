@@ -1,7 +1,8 @@
-use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
-use jsonwebtoken::errors::Result;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+
+use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
+use jsonwebtoken::errors::Result;
 
 static TOKEN_SECRET: Lazy<String> =
     Lazy::new(|| std::env::var("JWT_SECRET").expect("jwt secret must set"));
