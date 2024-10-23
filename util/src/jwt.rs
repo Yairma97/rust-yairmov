@@ -1,5 +1,5 @@
+use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
 use jsonwebtoken::errors::Result;
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 

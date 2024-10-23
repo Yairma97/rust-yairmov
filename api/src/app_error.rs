@@ -1,21 +1,30 @@
+use std::fmt::{Display, Formatter};
+
 use axum::extract::rejection::{JsonRejection, PathRejection, QueryRejection};
 use axum::http::header::ToStrError;
 use axum::http::StatusCode;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
-use serde_json::json;
 use thiserror::Error;
+use tracing::error;
 use validator::ValidationErrors;
 
 use service::{DomainError, GetUserError};
 
 use crate::app_response::GlobalResponse;
 
+#[derive(Debug)]
 pub struct AppError(pub Response);
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         self.0
+    }
+}
+
+impl Display for AppError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
@@ -41,16 +50,12 @@ impl AppError {
     }
 
     pub(crate) fn error_response(message: String, code: StatusCode) -> Self {
-        Self(
-            (
-                code,
-                Json(json!(GlobalResponse::<String> {
-                    message,
-                    code: code.as_u16(),
-                    data: None
-                })),
-            )
-                .into_response(),
+        error!("Unhandled internal error: {}", message);
+        Self(Json(GlobalResponse::<String> {
+            message,
+            code: code.as_u16(),
+            data: None,
+        }).into_response(),
         )
     }
 }
@@ -74,7 +79,7 @@ pub enum JWTError {
 impl From<DomainError> for AppError {
     fn from(e: DomainError) -> AppError {
         match &e {
-            DomainError::DbErr(_) => {Self::internal_server_error(e.to_string())}
+            DomainError::DbErr(str) => { Self::internal_server_error(str.to_string()) }
         }
     }
 }
@@ -128,6 +133,7 @@ impl From<ToStrError> for AppError {
         }
     }
 }
+
 impl From<wax::BuildError> for AppError {
     fn from(e: wax::BuildError) -> Self {
         match &e {

@@ -1,26 +1,26 @@
 use std::{env, net::SocketAddr, sync::Arc};
 
-use service::UsersManagerImpl;
+use dashmap::DashMap;
+use idgenerator_thin::{IdGeneratorOptions, YitIdHelper};
 
 use crate::app_config::AppConfig;
 use crate::app_routes;
 
-#[derive(Clone, Debug)]
-pub struct ServiceImpls {
-    pub users_manager: UsersManagerImpl,
+#[derive(Debug)]
+pub struct Context {
+    pub context: DashMap<String, String>,
 }
 
-pub type AppState = Arc<ServiceImpls>;
+pub type AppState = Arc<Context>;
 
 
 pub async fn start() {
     AppConfig::init("app.yaml");
+    let app_state = Arc::new(Context { context: DashMap::new() });
 
-    let users_manager = UsersManagerImpl;
+    let options = IdGeneratorOptions::new(1);
+    YitIdHelper::set_id_generator(options);
 
-    let app_state = Arc::new(ServiceImpls {
-        users_manager,
-    });
     let bind_address: SocketAddr = env::var("BIND_ADDRESS")
         .expect("BIND_ADDRESS is not set")
         .parse()

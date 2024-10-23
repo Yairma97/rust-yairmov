@@ -1,11 +1,10 @@
 use axum::Router;
-use axum::routing::{get};
+use axum::routing::post;
+
 use crate::AppState;
-use crate::login::login;
-use crate::me::me;
+use crate::create_user::create_user;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", get(me))
-        .route("/get", get(login))
+        .route("/create", post(create_user))
 }

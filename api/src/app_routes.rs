@@ -30,6 +30,7 @@ pub fn routes(state: AppState) -> Router {
         .layer(middleware_stack.into_inner())
         .with_state(state)
 }
+
 async fn print_request_response(
     req: Request,
     next: Next,
@@ -72,10 +73,10 @@ async fn buffer_and_print<B>(
     Ok(bytes)
 }
 
-async fn handle_error(error: BoxError) -> impl IntoResponse {
+async fn handle_error( error: BoxError) -> impl IntoResponse {
     if error.is::<tower::timeout::error::Elapsed>() {
         Ok(StatusCode::REQUEST_TIMEOUT)
     } else {
-        Err(AppError::internal_server_error(format!("Unhandled internal error: {}",error)))
+        Err(AppError::internal_server_error(format!("Unhandled internal error: {}", error)))
     }
 }
