@@ -1,0 +1,51 @@
+[package]
+name = "admin"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[[bin]]
+name = "admin"
+path = "src/main.rs"
+
+[features]
+default = []
+lib_redis = ["redis"]
+
+[dependencies]
+common_token = { path = "../common_token" }
+#api
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5.1", features = ["util", "filter", "timeout"] }
+tower-http = { version = "0.6.1", features = ["trace", "add-extension"] }
+serde = { version = "1.0", features = ["derive"] }
+http-body = "1.0"
+http-body-util = "0.1.0"
+tracing = { version = "0.1" }
+once_cell = { version = "1" }
+dashmap = "6.1.0"
+idgenerator-thin = "0.2.1"
+dotenv = "0.15.0"
+time = "0.3"
+redis = { version = "0.23", features = [
+    "connection-manager",
+    "tokio-comp",
+], optional = true }
+# logger
+tracing-subscriber = { version = "0.3", features = [
+    "env-filter",
+    "json",
+    "local-time",
+] }
+tracing-appender = { version = "0.2" }
+#database
+sqlx = { version = "0.8.2", default-features = false, features = [
+    "runtime-tokio-native-tls",
+    "macros",
+    "chrono",
+    "postgres",
+] }
+sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros", "debug-print"] }
+sea-query = { version = "0.32.0", features = ["backend-postgres", "derive"] }
+

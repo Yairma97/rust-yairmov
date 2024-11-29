@@ -21,19 +21,23 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 name = "admin"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
- "common_token",
+ "config",
  "dashmap",
  "dotenv",
  "http-body",
  "http-body-util",
  "idgenerator-thin",
+ "jsonwebtoken",
  "once_cell",
  "redis",
  "sea-orm",
  "sea-query",
  "serde",
+ "serde_json",
  "sqlx",
+ "thiserror",
  "time",
  "tokio",
  "tower",
@@ -41,6 +45,9 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+ "validator",
+ "walkdir",
+ "wax",
 ]
 
 [[package]]
@@ -423,24 +430,6 @@ dependencies = [
  "pin-project-lite",
  "tokio",
  "tokio-util",
-]
-
-[[package]]
-name = "common_token"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "config",
- "dashmap",
- "jsonwebtoken",
- "once_cell",
- "sea-orm",
- "serde",
- "thiserror",
- "tracing",
- "validator",
- "wax",
 ]
 
 [[package]]

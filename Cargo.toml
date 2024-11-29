@@ -1,17 +1,12 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
 [workspace]
-members = ["server_app"]
+members = [
+    "common_token",
+    "admin"
+]
+
 resolver = "2"
-
-[profile.dev]
-lto = false
-opt-level = 0
-overflow-checks = true
-incremental = true
-split-debuginfo = "unpacked"
-
-[profile.release]
-lto = "thin"
-opt-level = 'z'
-overflow-checks = false
-incremental = false
-panic = "abort"
