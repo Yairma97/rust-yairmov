@@ -1,4 +1,3 @@
-use crate::api::routes;
 use crate::database::connection::Repo;
 use common_token::app_config::AppConfig;
 use common_token::app_state::Context;
@@ -32,7 +31,7 @@ pub async fn start() {
         .parse()
         .expect("BIND_ADDRESS is invalid");
 
-    let routes = routes::routes(app_state);
+    let routes = api::routes(app_state);
 
     println!("listening on {}", bind_address);
 

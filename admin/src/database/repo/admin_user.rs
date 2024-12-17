@@ -1,7 +1,7 @@
-use crate::database::connection::REPOSITORY;
 use crate::database::entity::admin_user;
 use crate::database::entity::admin_user::ActiveModel;
 use crate::database::entity::prelude::AdminUser;
+use crate::database::REPOSITORY;
 use common_token::app_error::AppError;
 use idgenerator_thin::YitIdHelper;
 use sea_orm::ActiveValue::Set;

@@ -9,7 +9,7 @@ pub async fn init() -> (WorkerGuard, WorkerGuard) {
     let (_guard_file, _guard_stderr) = logger::log_create();
 
     #[cfg(feature = "lib_redis")]
-    redis::connection::RedisConnection::create().await;
+    redis::RedisConnection::create().await;
 
     (_guard_file, _guard_stderr)
 }
