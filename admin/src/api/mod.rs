@@ -1,4 +1,5 @@
-pub mod users;
+
+pub mod user;
 
 use axum::{
     body::{Body, Bytes},
@@ -9,14 +10,12 @@ use axum::{
     response::{IntoResponse, Response},
     Router,
 };
-use common_token::app_error;
 use common_token::app_error::AppError;
 use common_token::app_state::AppState;
 use http_body_util::BodyExt;
 use std::time::Duration;
 use tower::{BoxError, ServiceBuilder};
 use tower_http::trace::TraceLayer;
-pub use users::*;
 
 pub fn routes(state: AppState) -> Router {
     // don't change layer order, or errors happen...
@@ -28,7 +27,7 @@ pub fn routes(state: AppState) -> Router {
 
     Router::new()
         // repo
-        .nest("/users", users::router())
+        .nest("/users", user::router())
         .layer(middleware_stack.into_inner())
         .with_state(state)
 }
@@ -79,6 +78,6 @@ async fn handle_error( error: BoxError) -> impl IntoResponse {
     if error.is::<tower::timeout::error::Elapsed>() {
         Ok(StatusCode::REQUEST_TIMEOUT)
     } else {
-        Err(AppError::internal_server_error(format!("Unhandled internal error: {}", error)))
+        Err(AppError::ServerError(error))
     }
 }

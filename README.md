@@ -1,7 +1,6 @@
 # Sqlx的一些使用技巧
 
-``` rust 
-
+```rust 
 #[derive(Clone, Debug, Deserialize, FromRow, Serialize)]
 pub struct AdminUser {
     pub id: Option<String>,
@@ -67,9 +66,10 @@ pub(crate) async fn get_user(state: &AppState, id: &str) -> Result<AdminUser, Ap
         .await?;
     Ok(users)
 }
-```
-# Diesel使用技巧
 
+```
+
+# Diesel使用技巧
 ```rust
 //使用orm
 #[derive(Queryable, Selectable,QueryableByName)]

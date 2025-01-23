@@ -51,7 +51,7 @@ pub fn log_create() -> (WorkerGuard, WorkerGuard) {
     // 1. Local time required. log file append UTC time.
     // 2. no max file num
     // 3. file size
-    let file_appender = tracing_appender::rolling::daily("../../../logs", "app.log");
+    let file_appender = tracing_appender::rolling::daily("logs", "app.log");
     let (file_appender_writer, _guard_file) = tracing_appender::non_blocking(file_appender);
 
     let fmt_file = tracing_subscriber::fmt::layer()

@@ -27,7 +27,7 @@ pub fn encode_token(user: Claims) -> String {
     ).unwrap()
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 pub fn decode_token(token: &str) -> Result<Claims> {
     let mut validation = Validation::new(Algorithm::HS256);
     validation.set_required_spec_claims(&[""]);

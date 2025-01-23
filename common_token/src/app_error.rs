@@ -1,119 +1,74 @@
-use std::fmt::{Display, Formatter};
-
-use axum::extract::rejection::{JsonRejection, PathRejection, QueryRejection};
-use axum::http::header::ToStrError;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
+use axum::BoxError;
+use std::io::{self, ErrorKind};
 use thiserror::Error;
 use tracing::error;
-use validator::ValidationErrors;
 
-use crate::app_response::GlobalResponse;
+#[derive(Error, Debug)]
+pub enum AppError {
 
-#[derive(Debug)]
-pub struct AppError(pub Response);
+    #[error("server error{0}")]
+    ServerError(BoxError),
 
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        self.0
-    }
-}
+    /// File IO Error
+    #[error(transparent)]
+    IOError(#[from] io::Error),
 
-impl Display for AppError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
+    /// Other runtime errors
+    #[error(transparent)]
+    OtherError(#[from] anyhow::Error),
+
+    #[error(transparent)]
+    JWTError(#[from] jsonwebtoken::errors::Error),
+
+    #[error(transparent)]
+    WaxBuildError(#[from] wax::BuildError),
+
+    #[error(transparent)]
+    ValidationErrors(#[from] validator::ValidationErrors),
+
+    #[error(transparent)]
+    DbErr(#[from] sea_orm::DbErr),
+
+    #[error(transparent)]
+    ToStrError(#[from] axum::http::header::ToStrError),
+
+    #[error(transparent)]
+    QueryRejection(#[from] axum::extract::rejection::QueryRejection),
+
+    #[error(transparent)]
+    JsonRejection(#[from] axum::extract::rejection::JsonRejection),
+
+    #[error(transparent)]
+    PathRejection(#[from] axum::extract::rejection::PathRejection),
 }
 
 impl AppError {
-    pub(crate) fn forbidden(str: String) -> Self {
-        Self::error_response(str, StatusCode::FORBIDDEN)
-    }
-
-    pub fn internal_server_error(str: String) -> Self {
-        Self::error_response(str, StatusCode::INTERNAL_SERVER_ERROR)
-    }
-    #[allow(dead_code)]
-    pub(crate) fn not_found(str: String) -> Self {
-        Self::error_response(str, StatusCode::NOT_FOUND)
-    }
-
-    pub(crate) fn unauthorized(str: String) -> Self {
-        Self::error_response(str, StatusCode::UNAUTHORIZED)
-    }
-
-    pub(crate) fn bad_request(str: String) -> Self {
-        Self::error_response(str, StatusCode::BAD_REQUEST)
-    }
-
-    pub(crate) fn error_response(message: String, code: StatusCode) -> Self {
-        error!("Unhandled internal error: {}", message);
-        Self(
-            Json(GlobalResponse::<String> {
-                message,
-                code: code.as_u16(),
-                data: None,
-            })
-            .into_response(),
-        )
+    /// Failed to read file io
+    pub fn from_io(kind: ErrorKind, msg: &str) -> Self {
+        AppError::IOError(io::Error::new(kind, msg))
     }
 }
+/// Contains the return value of AppError
+pub type AppResult<T> = Result<T, AppError>;
 
-#[derive(Debug)]
-pub enum ValidateError {
-    InvalidParam(ValidationErrors),
-    AxumQueryRejection(QueryRejection),
-    AxumJsonRejection(JsonRejection),
-    AxumPathRejection(PathRejection),
-}
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        let (status, msg) = match self {
+            AppError::ServerError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::IOError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::OtherError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::JWTError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::WaxBuildError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::ValidationErrors(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::DbErr(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::ToStrError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::QueryRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::JsonRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::PathRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+        };
 
-#[derive(Error, Debug)]
-pub enum JWTError {
-    #[error("{}", "验证失败，请重新登录")]
-    Missing,
-    #[error("{}", "未认证")]
-    Invalid,
-}
-
-impl From<ValidateError> for AppError {
-    fn from(e: ValidateError) -> Self {
-        match &e {
-            ValidateError::InvalidParam(v) => Self::bad_request(v.to_string().replace('\n', " , ")),
-            ValidateError::AxumQueryRejection(v) => Self::bad_request(v.to_string()),
-            ValidateError::AxumJsonRejection(v) => Self::bad_request(v.to_string()),
-            ValidateError::AxumPathRejection(v) => Self::bad_request(v.to_string()),
-        }
-    }
-}
-
-impl From<JWTError> for AppError {
-    fn from(e: JWTError) -> Self {
-        match &e {
-            JWTError::Invalid => Self::unauthorized(e.to_string()),
-            JWTError::Missing => Self::forbidden(e.to_string()),
-        }
-    }
-}
-impl From<sea_orm::DbErr> for AppError {
-    fn from(e: sea_orm::DbErr) -> Self {
-        match &e {
-            _ => Self::internal_server_error(e.to_string()),
-        }
-    }
-}
-impl From<ToStrError> for AppError {
-    fn from(e: ToStrError) -> Self {
-        match &e {
-            ToStrError { .. } => Self::internal_server_error(e.to_string()),
-        }
-    }
-}
-
-impl From<wax::BuildError> for AppError {
-    fn from(e: wax::BuildError) -> Self {
-        match &e {
-            wax::BuildError { .. } => Self::forbidden(e.to_string()),
-        }
+        (status, msg).into_response()
     }
 }

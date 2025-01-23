@@ -1,7 +1,7 @@
-pub mod entity;
-pub mod repo;
+
+pub mod user;
+
 use once_cell::sync::OnceCell;
-pub use repo::*;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::env;
 use std::time::Duration;

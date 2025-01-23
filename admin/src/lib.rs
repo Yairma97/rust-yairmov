@@ -1,18 +1,22 @@
-use crate::database::connection::Repo;
-use common_token::app_config::AppConfig;
+use crate::database::Repo;
 use common_token::app_state::Context;
 use dashmap::DashMap;
 use idgenerator_thin::{IdGeneratorOptions, YitIdHelper};
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use crate::config::AppConfig;
 
 mod api;
 mod database;
 mod extra;
 mod service;
+mod model;
+mod config;
+mod request;
+
 pub async fn start() {
-    dotenv::dotenv().ok();
+    dotenv::from_path("admin/.env").ok();
 
     let (_guard_file, _guard_stderr) = extra::init().await;
 

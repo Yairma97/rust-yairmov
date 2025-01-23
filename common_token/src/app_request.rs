@@ -1,77 +1,31 @@
-use std::borrow::Cow;
-
+use crate::app_error::AppError;
 use axum::{
     async_trait,
-    extract::{FromRequest, FromRequestParts, Path, Query, Request},
-    http::request::Parts,
+    extract::{FromRequest, Path, Query, Request},
     Json,
 };
 use serde::de::DeserializeOwned;
+use std::borrow::Cow;
 use validator::{Validate, ValidationErrors};
-use wax::Pattern;
-
-
-use crate::app_config::CONFIG;
-use crate::app_error::AppError;
-use crate::app_error::{JWTError, ValidateError};
-use crate::jwt::{decode_token, Claims};
-
-pub struct JwtAuth(pub Claims);
-
-#[async_trait]
-impl<S> FromRequestParts<S> for JwtAuth
-    where
-        S: Send + Sync,
-{
-    type Rejection = AppError;
-
-    async fn from_request_parts(
-        req: &mut Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        let config = CONFIG.get().unwrap();
-        let vec = config.global.ignores.iter();
-        let path = req.uri.path();
-        for ignore_url in vec {
-            if wax::Glob::new(ignore_url)?.is_match(path) {
-                return Ok(Self(Default::default()))
-            }
-        }
-        let headers = req.to_owned().headers;
-        match headers.get("Authorization") {
-            None => {
-                Err(AppError::from(JWTError::Missing))
-            }
-            Some(auth) => match  decode_token(auth.to_str()?) {
-                Ok(k) => Ok(Self(k)),
-                Err(_) => Err(AppError::from(JWTError::Missing))
-            }
-        }
-    }
-}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ValidatedQuery<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequest<S> for ValidatedQuery<T>
-    where
-        T: DeserializeOwned + Validate,
-        S: Send + Sync,
+where
+    T: DeserializeOwned + Validate,
+    S: Send + Sync,
 {
     type Rejection = AppError;
 
-    async fn from_request(
-        req: Request,
-        state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        let Query(value) =
-            Query::<T>::from_request(req, state).await.map_err(|e| {
-                AppError::from(ValidateError::AxumQueryRejection(e))
-            })?;
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        let Query(value) = Query::<T>::from_request(req, state)
+            .await
+            .map_err(|e| AppError::from(e))?;
         value.validate().map_err(|e| {
             let ves = to_new_validation_errors(e);
-            AppError::from(ValidateError::InvalidParam(ves))
+            AppError::from(ves)
         })?;
         Ok(ValidatedQuery(value))
     }
@@ -82,22 +36,19 @@ pub struct ValidatedJson<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequest<S> for ValidatedJson<T>
-    where
-        T: DeserializeOwned + Validate,
-        S: Send + Sync,
+where
+    T: DeserializeOwned + Validate,
+    S: Send + Sync,
 {
     type Rejection = AppError;
 
-    async fn from_request(
-        req: Request,
-        state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Json(value) = Json::<T>::from_request(req, state)
             .await
-            .map_err(|e| AppError::from(ValidateError::AxumJsonRejection(e)))?;
+            .map_err(|e| AppError::from(AppError::from(e)))?;
         value.validate().map_err(|e| {
             let ves = to_new_validation_errors(e);
-            AppError::from(ValidateError::InvalidParam(ves))
+            AppError::from(ves)
         })?;
         Ok(ValidatedJson(value))
     }
@@ -108,22 +59,19 @@ pub struct ValidatedPath<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequest<S> for ValidatedPath<T>
-    where
-        T: DeserializeOwned + Validate + Send,
-        S: Send + Sync,
+where
+    T: DeserializeOwned + Validate + Send,
+    S: Send + Sync,
 {
     type Rejection = AppError;
 
-    async fn from_request(
-        req: Request,
-        state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Path(value) = Path::<T>::from_request(req, state)
             .await
-            .map_err(|e| AppError::from(ValidateError::AxumPathRejection(e)))?;
+            .map_err(|e| AppError::from(AppError::from(e)))?;
         value.validate().map_err(|e| {
             let ves = to_new_validation_errors(e);
-            AppError::from(ValidateError::InvalidParam(ves))
+            AppError::from(ves)
         })?;
         Ok(ValidatedPath(value))
     }
@@ -136,9 +84,8 @@ fn to_new_validation_errors(e: ValidationErrors) -> ValidationErrors {
         for validation_err in vec_validation_error {
             tracing::debug!("validation_err.code: {}", validation_err.code);
             let mut new_validation_error = validation_err.clone();
-            new_validation_error.message = Some(Cow::from(
-                new_validation_error.code.clone().to_string(),
-            ));
+            new_validation_error.message =
+                Some(Cow::from(new_validation_error.code.clone().to_string()));
             new_validation_errors.add(field, new_validation_error);
         }
     }
