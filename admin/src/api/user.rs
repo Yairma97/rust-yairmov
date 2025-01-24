@@ -1,6 +1,6 @@
 use crate::model::params::user::CreateUserParams;
 use crate::request::JwtAuth;
-use crate::service::user::UsersManager;
+use crate::service::user::UsersService;
 use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use axum::routing::post;
@@ -25,7 +25,7 @@ pub async fn create_user(
 ) -> Result<impl IntoResponse, AppError> {
     info!("{:#?}",user_info);
     info!("{:#?}",state);
-    let sucess = UsersManager.create_user(params.user_name.as_str(), params.password.as_str()).await?;
+    let sucess = UsersService.create_user(params.user_name.as_str(), params.password.as_str()).await?;
     Ok(success(sucess))
 }
 
@@ -36,6 +36,6 @@ pub async fn get_user(
     Query(params): Query<HashMap<String, String>>
 ) -> Result<impl IntoResponse, AppError> {
     let id = params.get("id").expect("id不能为空");
-    let sucess = UsersManager.get_user(id).await?;
+    let sucess = UsersService.get_user(id).await?;
     Ok(success(sucess))
 }

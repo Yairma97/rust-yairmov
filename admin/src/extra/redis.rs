@@ -1,3 +1,4 @@
+use crate::config::CONFIG;
 use once_cell::sync::OnceCell;
 use redis::aio::ConnectionManager;
 use std::{env, fmt};
@@ -22,9 +23,9 @@ impl RedisConnection {
     }
 
     pub async fn create() {
-        let redis_url = env::var("REDIS_URL").unwrap();
+        let redis_url = &CONFIG.get().unwrap().app.redis_url;
         debug!(target: "redis connection", redis_url = ?redis_url);
-        let redis_connection = RedisConnection::new(&redis_url);
+        let redis_connection = RedisConnection::new(redis_url);
         REDIS
             .set(redis_connection.await)
             .expect("redis conn must set");

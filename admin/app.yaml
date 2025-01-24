@@ -1,3 +1,20 @@
+app:
+  name: admin
+  ip: 127.0.0.1
+  port: 5896
+  database_url: postgres://postgres:672832006myf@localhost:5432/postgres
+  redis_url: redis://localhost:6379/
+  jwt_secret: lr_cdr_data
+  work_id: 1
+
+nacos:
+  server_addr: 127.0.0.1:8848
+  nacos_config:
+    config_id: health-cdr-admin-dev.yaml
+    namespace: hdr-dev
+    username: hdr-dev
+    password: hdr-dev
+
 global:
   ignores:
-  - "/**"
+    - "/**"

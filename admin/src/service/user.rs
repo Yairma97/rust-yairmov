@@ -3,9 +3,9 @@ use crate::model::entity::admin_user;
 use common_token::app_error::AppError;
 
 #[derive(Clone, Debug)]
-pub struct UsersManager;
+pub struct UsersService;
 
-impl UsersManager {
+impl UsersService {
     pub async fn get_user(&self, id: &str) -> Result<admin_user::Model, AppError> {
         get_user(id).await
     }

@@ -1,6 +1,7 @@
 
 pub mod user;
 
+use crate::config::CONFIG;
 use once_cell::sync::OnceCell;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::env;
@@ -35,9 +36,10 @@ impl Repo {
     }
     #[tracing::instrument]
     pub async fn create() {
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let app_config = CONFIG.get().unwrap();
+        let database_url = &app_config.app.database_url;;
 
-        let repo = Repo::new(&database_url);
+        let repo = Repo::new(database_url);
 
         REPOSITORY.set(repo.await).expect("db connection must set");
 
