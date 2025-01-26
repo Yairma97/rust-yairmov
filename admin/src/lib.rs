@@ -1,7 +1,6 @@
 use crate::config::{AppConfig, CONFIG};
 use crate::database::Repo;
-use crate::proto::hello;
-use crate::service::rpc::hello::MyGreeter;
+use crate::service::rpc::rpc_greeter;
 use crate::service::Service;
 use common_token::app_state::Context;
 use dashmap::DashMap;
@@ -49,7 +48,7 @@ pub async fn start() {
     let total = Routes::builder();
     let rest_service = api::routes(app_state);
     //rpc
-    let grpc_hello = tonic_web::enable(hello::greeter_server::GreeterServer::new(MyGreeter{}));
+    let grpc_hello = rpc_greeter();
     let router = total.routes()
         .add_service(grpc_hello)
         .into_axum_router()
