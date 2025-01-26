@@ -1,8 +1,8 @@
 use crate::database::REPOSITORY;
+use crate::error::AppError;
 use crate::model::entity::admin_user;
 use crate::model::entity::prelude::AdminUser;
 use crate::IdHelper;
-use common_token::app_error::AppError;
 use sea_orm::{ActiveModelTrait, EntityTrait};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Row};

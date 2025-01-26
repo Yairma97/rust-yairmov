@@ -14,7 +14,9 @@
       <sourceFolder url="file://$MODULE_DIR$/admin/src/database/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/admin/src/extra/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/admin/src/service/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/client/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common_token/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/hello/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/admin/src/api/target" />
       <excludeFolder url="file://$MODULE_DIR$/admin/target" />
       <excludeFolder url="file://$MODULE_DIR$/common_token/target" />

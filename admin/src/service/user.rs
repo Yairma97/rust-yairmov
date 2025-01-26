@@ -1,6 +1,6 @@
 use crate::database::user::{create_user, get_user};
+use crate::error::AppError;
 use crate::model::entity::admin_user;
-use common_token::app_error::AppError;
 
 #[derive(Clone, Debug)]
 pub struct UsersService;

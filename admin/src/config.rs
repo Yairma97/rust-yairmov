@@ -1,4 +1,4 @@
-use common_token::app_error::AppError;
+use crate::error::AppError;
 use config::{Config, File};
 use nacos_sdk::api::config::ConfigServiceBuilder;
 use nacos_sdk::api::config::{ConfigChangeListener, ConfigResponse, ConfigService};
@@ -13,9 +13,11 @@ use tracing::{error, info};
 
 pub static CONFIG: OnceCell<AppConfig> = OnceCell::new();
 #[allow(unused)]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone)]
 pub struct AppConfig {
     pub config: Arc<Config>,
+    pub naming_service: Arc<dyn NamingService>,
+    pub config_service: Arc<dyn ConfigService>,
 }
 
 #[allow(unused)]
@@ -104,6 +106,8 @@ impl AppConfig {
         info!("final config:{:?}", init_config);
         let app_config = AppConfig {
             config: Arc::from(init_config),
+            naming_service: Arc::from(naming_service),
+            config_service:Arc::from(config_service),
         };
         CONFIG.set(app_config);
         Ok(())

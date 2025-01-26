@@ -6,7 +6,7 @@ license = "MIT"
 [workspace]
 members = [
     "common_token",
-    "admin"
-]
+    "admin",
+    "client", "hello"]
 
 resolver = "2"

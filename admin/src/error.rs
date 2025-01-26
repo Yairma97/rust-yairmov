@@ -1,11 +1,11 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::BoxError;
-use std::io::{self, ErrorKind};
+use std::io;
 use thiserror::Error;
 use tracing::error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug,)]
 pub enum AppError {
     #[error("server error{0}")]
     ServerError(BoxError),
@@ -15,7 +15,10 @@ pub enum AppError {
     /// File IO Error
     #[error(transparent)]
     IOError(#[from] io::Error),
-
+    #[error(transparent)]
+    NacosError(#[from] nacos_sdk::api::error::Error),
+    #[error(transparent)]
+    TonicError(#[from] tonic::transport::Error),
     /// Other runtime errors
     #[error(transparent)]
     OtherError(#[from] anyhow::Error),
@@ -45,15 +48,6 @@ pub enum AppError {
     PathRejection(#[from] axum::extract::rejection::PathRejection),
 }
 
-impl AppError {
-    /// Failed to read file io
-    pub fn from_io(kind: ErrorKind, msg: &str) -> Self {
-        AppError::IOError(io::Error::new(kind, msg))
-    }
-}
-/// Contains the return value of AppError
-pub type AppResult<T> = Result<T, AppError>;
-
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, msg) = match self {
@@ -68,7 +62,9 @@ impl IntoResponse for AppError {
             AppError::QueryRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::JsonRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::PathRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
-            AppError::ConfigError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            AppError::ConfigError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::NacosError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::TonicError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
         };
 
         (status, msg).into_response()

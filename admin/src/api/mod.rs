@@ -1,6 +1,7 @@
 
 pub mod user;
 
+use crate::error::AppError;
 use axum::{
     body::{Body, Bytes},
     error_handling::HandleErrorLayer,
@@ -10,7 +11,6 @@ use axum::{
     response::{IntoResponse, Response},
     Router,
 };
-use common_token::app_error::AppError;
 use common_token::app_state::AppState;
 use http_body_util::BodyExt;
 use std::time::Duration;

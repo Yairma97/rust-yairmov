@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use crate::model::params::user::CreateUserParams;
 use crate::request::JwtAuth;
 use crate::service::user::UsersService;
@@ -5,7 +6,6 @@ use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use axum::routing::post;
 use axum::{Json, Router};
-use common_token::app_error::AppError;
 use common_token::app_response::success;
 use common_token::app_state::AppState;
 use std::collections::HashMap;
