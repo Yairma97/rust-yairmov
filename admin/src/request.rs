@@ -1,7 +1,7 @@
 use crate::config::CONFIG;
+use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use axum::{async_trait};
 use common_token::app_error::AppError;
 use common_token::jwt::{decode_token, Claims};
 use wax::Pattern;
@@ -17,10 +17,10 @@ where
 
     async fn from_request_parts(req: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         let config = CONFIG.get().unwrap();
-        let vec = config.global.ignores.iter();
+        let vec = config.config.get::<Vec<String>>("global.ignores").unwrap();
         let path = req.uri.path();
         for ignore_url in vec {
-            if wax::Glob::new(ignore_url)?.is_match(path) {
+            if wax::Glob::new(&ignore_url)?.is_match(path) {
                 return Ok(Self(Default::default()));
             }
         }

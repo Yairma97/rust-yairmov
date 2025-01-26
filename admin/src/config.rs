@@ -1,3 +1,4 @@
+use common_token::app_error::AppError;
 use config::{Config, File};
 use nacos_sdk::api::config::ConfigServiceBuilder;
 use nacos_sdk::api::config::{ConfigChangeListener, ConfigResponse, ConfigService};
@@ -7,74 +8,35 @@ use nacos_sdk::api::naming::{
 };
 use nacos_sdk::api::props::ClientProps;
 use once_cell::sync::OnceCell;
-use serde::Deserialize;
 use std::sync::Arc;
+use tracing::{error, info};
 
-pub static CONFIG: OnceCell<Arc<AppConfig>> = OnceCell::new();
+pub static CONFIG: OnceCell<AppConfig> = OnceCell::new();
 #[allow(unused)]
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct AppConfig {
-    pub global: IgnoreUrls,
-    pub app: AppInnerConfig,
-    pub nacos: NacosInnerConfig,
-}
-#[allow(unused)]
-#[derive(Clone, Debug, Deserialize, Default)]
-pub struct IgnoreUrls {
-    pub ignores: Vec<String>,
-}
-
-#[allow(unused)]
-#[derive(Clone, Debug, Deserialize, Default)]
-pub struct AppInnerConfig {
-    pub name: String,
-    pub ip: String,
-    pub port: String,
-    #[serde(skip)]
-    pub addr: String,
-    pub database_url: String,
-    pub redis_url: String,
-    pub jwt_secret: String,
-    pub work_id: String,
-}
-
-#[allow(unused)]
-#[derive(Clone, Debug, Deserialize, Default)]
-pub struct NacosInnerConfig {
-    pub server_addr: String,
-    pub nacos_config: NacosConfig,
-}
-
-#[allow(unused)]
-#[derive(Clone, Debug, Deserialize, Default)]
-pub struct NacosConfig {
-    pub config_id: String,
-    pub namespace: String,
-    pub username: String,
-    pub password: String,
+    pub config: Arc<Config>,
 }
 
 #[allow(unused)]
 impl AppConfig {
-    pub async fn init(file_path: &str) {
-        let settings = Config::builder()
+    pub async fn init(file_path: &str) -> Result<(), AppError> {
+        let mut init_config = Config::builder()
             .add_source(File::with_name(file_path))
-            .build()
-            .unwrap();
-        let mut config = settings.try_deserialize::<AppConfig>().unwrap();
-        let addr = format!("{}:{}", config.app.ip.clone(), config.app.port.clone());
-        config.app.addr = addr;
-
-        println!("{:#?}", config);
+            .build()?;
         //nacos
         let client_props = ClientProps::new()
-            .server_addr(config.nacos.server_addr.clone())
+            .server_addr(init_config.get_string("nacos.server_addr")?)
             // .remote_grpc_port(9838)
-            .app_name(config.app.name.clone())
+            .app_name(init_config.get_string("app.name")?)
             // Attention! "public" is "", it is recommended to customize the namespace with clear meaning.
-            .namespace(config.nacos.nacos_config.namespace.clone())
-            .auth_username(config.nacos.nacos_config.username.clone())
-            .auth_password(config.nacos.nacos_config.password.clone());
+            .namespace(if init_config.get_string("nacos.namespace")?.eq("public") {
+                "".to_string()
+            } else {
+                init_config.get_string("nacos.namespace")?
+            })
+            .auth_username(init_config.get_string("nacos.username")?)
+            .auth_password(init_config.get_string("nacos.password")?);
 
         // ----------  Config  -------------
         let config_service = ConfigServiceBuilder::new(client_props.clone())
@@ -83,24 +45,34 @@ impl AppConfig {
             .expect("Failed to build config service");
         let config_resp = config_service
             .get_config(
-                config.nacos.nacos_config.config_id.clone(),
+                init_config.get_string("nacos.config_id")?,
                 constants::DEFAULT_GROUP.to_string(),
             )
             .await;
         match config_resp {
-            Ok(config_resp) => tracing::info!("get the config",),
-            Err(err) => tracing::error!("get the config {:?}", err),
+            Ok(config_resp) => {
+                //重构 config
+                info!("get the config");
+                init_config = Config::builder()
+                    .add_source(config::File::with_name(file_path))
+                    .add_source(config::File::from_str(
+                        config_resp.content(),
+                        config::FileFormat::Yaml,
+                    ))
+                    .build()?;
+            }
+            Err(err) => error!("get the config {:?}", err),
         }
         let _listen = config_service
             .add_listener(
-                config.nacos.nacos_config.config_id.clone(),
+                init_config.get_string("nacos.config_id")?,
                 constants::DEFAULT_GROUP.to_string(),
                 std::sync::Arc::new(SimpleConfigChangeListener {}),
             )
             .await;
         match _listen {
-            Ok(_) => tracing::info!("listening the config success"),
-            Err(err) => tracing::error!("listen config error {:?}", err),
+            Ok(_) => info!("listening the config success"),
+            Err(err) => error!("listen config error {:?}", err),
         }
         // ----------  Naming  -------------
         let naming_service = NamingServiceBuilder::new(client_props)
@@ -110,7 +82,7 @@ impl AppConfig {
         let listener = std::sync::Arc::new(SimpleInstanceChangeListener);
         let _subscribe_ret = naming_service
             .subscribe(
-                config.app.name.clone(),
+                init_config.get_string("app.name")?,
                 Some(constants::DEFAULT_GROUP.to_string()),
                 Vec::default(),
                 listener,
@@ -118,26 +90,30 @@ impl AppConfig {
             .await;
 
         let service_instance = ServiceInstance {
-            ip: config.app.ip.clone(),
-            port: config.app.port.clone().parse().unwrap(),
+            ip: init_config.get_string("app.ip")?,
+            port: init_config.get_int("app.port")? as i32,
             ..Default::default()
         };
         let _register_instance_ret = naming_service
             .batch_register_instance(
-                config.app.name.clone(),
+                init_config.get_string("app.name")?,
                 Some(constants::DEFAULT_GROUP.to_string()),
                 vec![service_instance],
             )
             .await;
-
-        CONFIG.set(Arc::from(config));
+        info!("final config:{:?}", init_config);
+        let app_config = AppConfig {
+            config: Arc::from(init_config),
+        };
+        CONFIG.set(app_config);
+        Ok(())
     }
 }
 struct SimpleConfigChangeListener;
 
 impl ConfigChangeListener for SimpleConfigChangeListener {
     fn notify(&self, config_resp: ConfigResponse) {
-        tracing::info!("listen the config={}", config_resp);
+        info!("listen the config={}", config_resp);
     }
 }
 
@@ -145,6 +121,6 @@ pub struct SimpleInstanceChangeListener;
 
 impl NamingEventListener for SimpleInstanceChangeListener {
     fn event(&self, event: std::sync::Arc<NamingChangeEvent>) {
-        tracing::info!("subscriber notify: {:?}", event);
+        info!("subscriber notify: {:?}", event);
     }
 }

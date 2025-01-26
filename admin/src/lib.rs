@@ -20,20 +20,22 @@ pub async fn start() {
 
     let (_guard_file, _guard_stderr) = extra::init().await;
 
-    AppConfig::init("admin/app.yaml").await;
+    AppConfig::init("admin/app.yaml")
+        .await
+        .expect("config init error");
 
     Repo::create().await;
 
     let app_config = CONFIG.get().expect("APPConfig is not set");
-    let work_id = &app_config.app.work_id;
+    let work_id = app_config.config.get_string("app.work_id").unwrap();
     let options = IdGeneratorOptions::new(work_id.parse::<u32>().unwrap());
     YitIdHelper::set_id_generator(options);
-
-    let bind_address = &app_config
-        .app
-        .addr
-        .parse::<SocketAddr>()
-        .unwrap();
+    let addr = format!(
+        "{}:{}",
+        app_config.config.get_string("app.ip").unwrap(),
+        app_config.config.get_string("app.port").unwrap()
+    );
+    let bind_address = addr.parse::<SocketAddr>().unwrap();
 
     let app_state = Arc::new(Context {
         context: DashMap::new(),

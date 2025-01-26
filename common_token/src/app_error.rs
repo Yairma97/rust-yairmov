@@ -7,10 +7,11 @@ use tracing::error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
-
     #[error("server error{0}")]
     ServerError(BoxError),
 
+    #[error(transparent)]
+    ConfigError(#[from]config::ConfigError),
     /// File IO Error
     #[error(transparent)]
     IOError(#[from] io::Error),
@@ -67,6 +68,7 @@ impl IntoResponse for AppError {
             AppError::QueryRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::JsonRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::PathRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::ConfigError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
         };
 
         (status, msg).into_response()

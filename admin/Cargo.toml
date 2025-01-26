@@ -51,4 +51,5 @@ sea-query = { version = "0.32.0", features = ["backend-postgres", "derive"] }
 config = "0.14.0"
 wax="0.6.0"
 nacos-sdk = { version = "0.4", features = ["default"] }
+serde_json = "1.0.133"
 
