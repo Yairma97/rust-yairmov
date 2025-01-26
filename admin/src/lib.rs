@@ -1,8 +1,7 @@
 use crate::config::{AppConfig, CONFIG};
 use crate::database::Repo;
-use crate::proto::{echo, hello};
+use crate::proto::hello;
 use crate::service::rpc::hello::MyGreeter;
-use crate::service::rpc::user_server::EchoServer;
 use crate::service::Service;
 use common_token::app_state::Context;
 use dashmap::DashMap;
@@ -46,12 +45,12 @@ pub async fn start() {
     let app_state = Arc::new(Context {
         context: DashMap::new(),
     });
+    //route
     let total = Routes::builder();
     let rest_service = api::routes(app_state);
-    let grpc_echo = tonic_web::enable(echo::echo_server::EchoServer::new(EchoServer {}));
+    //rpc
     let grpc_hello = tonic_web::enable(hello::greeter_server::GreeterServer::new(MyGreeter{}));
     let router = total.routes()
-        .add_service(grpc_echo)
         .add_service(grpc_hello)
         .into_axum_router()
         .merge(rest_service);
@@ -60,7 +59,6 @@ pub async fn start() {
         app_config.config.get_string("app.ip").unwrap(),
         app_config.config.get_string("app.port").unwrap()
     );
-
     let bind_address = addr.parse::<SocketAddr>().unwrap();
     println!("listening on {}", bind_address);
     let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();

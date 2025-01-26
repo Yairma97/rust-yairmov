@@ -16,7 +16,7 @@ nacos:
 rpc:
   name: rust-admin-rpc
   ip: 127.0.0.1
-  port: 15896
+  port: 5896
 global:
   ignores:
     - "/**"

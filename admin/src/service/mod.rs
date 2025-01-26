@@ -5,15 +5,11 @@ use crate::config::CONFIG;
 use crate::error::AppError;
 use nacos_sdk::api::constants;
 use nacos_sdk::api::naming::ServiceInstance;
-use std::net::{SocketAddr, ToSocketAddrs};
-
+use std::net::ToSocketAddrs;
 
 pub struct Service;
 impl Service {
     pub(crate) async fn init() -> Result<(), AppError> {
-        // 服务地址
-        let addr: SocketAddr = "[::1]:50051".parse().unwrap();
-
         let app_config = CONFIG.get().expect("APPConfig is not set");
         let naming_service = &app_config.naming_service;
 
@@ -31,14 +27,12 @@ impl Service {
             .await?;
 
         // 启动 gRPC 服务
+        let addr = format!(
+            "{}:{}",
+            app_config.config.get_string("app.ip")?,
+            app_config.config.get_string("app.port")?,
+        );
         println!("Server running on {}", addr);
-        // let server = EchoServer {};
-        // Server::builder()
-        //     .add_service(pb::echo_server::EchoServer::new(server))
-        //     .serve("0.0.0.0:50051".to_socket_addrs().unwrap().next().unwrap())
-        //     .await
-        //     .unwrap();
-
         Ok(())
     }
 }

@@ -7,6 +7,6 @@ license = "MIT"
 members = [
     "common_token",
     "admin",
-    "client", "hello"]
+    "hello"]
 
 resolver = "2"
