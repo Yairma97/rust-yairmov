@@ -5,11 +5,8 @@ use crate::service::Service;
 use common_token::app_state::Context;
 use dashmap::DashMap;
 use idgenerator_thin::{IdGeneratorOptions, YitIdHelper};
-use sea_query::ExprTrait;
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 use std::sync::Arc;
-use tonic::service::Routes;
-
 mod api;
 mod config;
 mod database;
@@ -30,12 +27,13 @@ pub async fn start() {
     AppConfig::init("admin/app.yaml")
         .await
         .expect("config init error");
+    println!("-------------config---------------");
     //db
     Repo::create().await;
-    println!("----------------------------");
+    println!("--------------db--------------");
     //rpc
     Service::init().await.expect("service init error");
-    println!("======================");
+    println!("--------------rpc--------------");
     let app_config = CONFIG.get().expect("APPConfig is not set");
     let work_id = app_config.config.get_string("app.work_id").unwrap();
     let options = IdGeneratorOptions::new(work_id.parse::<u32>().unwrap());
@@ -45,14 +43,10 @@ pub async fn start() {
         context: DashMap::new(),
     });
     //route
-    let total = Routes::builder();
     let rest_service = api::routes(app_state);
     //rpc
-    let grpc_hello = rpc_greeter();
-    let router = total.routes()
-        .add_service(grpc_hello)
-        .into_axum_router()
-        .merge(rest_service);
+    let rpc = rpc_greeter();
+    let router = rest_service.merge(rpc);
     let addr = format!(
         "{}:{}",
         app_config.config.get_string("app.ip").unwrap(),
@@ -61,7 +55,5 @@ pub async fn start() {
     let bind_address = addr.parse::<SocketAddr>().unwrap();
     println!("listening on {}", bind_address);
     let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();
-    axum::serve(listener, router)
-        .await
-        .unwrap();
+    axum::serve(listener, router).await.unwrap();
 }

@@ -1,17 +1,17 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::BoxError;
+use axum::{BoxError, Json};
 use std::io;
 use thiserror::Error;
 use tracing::error;
 
-#[derive(Error, Debug,)]
+#[derive(Error, Debug)]
 pub enum AppError {
     #[error("server error{0}")]
-    ServerError(BoxError),
+    ServerError(#[from] BoxError),
 
     #[error(transparent)]
-    ConfigError(#[from]config::ConfigError),
+    ConfigError(#[from] config::ConfigError),
     /// File IO Error
     #[error(transparent)]
     IOError(#[from] io::Error),
@@ -55,18 +55,32 @@ impl IntoResponse for AppError {
             AppError::IOError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::OtherError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::JWTError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
-            AppError::WaxBuildError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
-            AppError::ValidationErrors(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::WaxBuildError(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            }
+            AppError::ValidationErrors(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            }
             AppError::DbErr(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::ToStrError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
-            AppError::QueryRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
-            AppError::JsonRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
-            AppError::PathRejection(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
+            AppError::QueryRejection(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            }
+            AppError::JsonRejection(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            }
+            AppError::PathRejection(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            }
             AppError::ConfigError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::NacosError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
             AppError::TonicError(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()),
         };
-
-        (status, msg).into_response()
+        let body = Json(common_token::app_response::Response {
+            code: 500,
+            message: "Internal server error".to_string(),
+            data: Some(msg),
+        });
+        (status, body).into_response()
     }
 }

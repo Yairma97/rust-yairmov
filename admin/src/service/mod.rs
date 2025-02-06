@@ -2,7 +2,7 @@ pub mod rpc;
 pub mod user;
 
 use crate::error::AppError;
-use std::net::ToSocketAddrs;
+
 
 pub struct Service;
 impl Service {

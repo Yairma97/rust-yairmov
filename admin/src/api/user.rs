@@ -4,7 +4,7 @@ use crate::request::JwtAuth;
 use crate::service::user::UsersService;
 use axum::extract::{Query, State};
 use axum::response::IntoResponse;
-use axum::routing::post;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use common_token::app_response::success;
 use common_token::app_state::AppState;
@@ -15,6 +15,7 @@ use tracing::info;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/create", post(create_user))
+        .route("/get", get(get_user))
 }
 
 #[tracing::instrument(skip(state))]

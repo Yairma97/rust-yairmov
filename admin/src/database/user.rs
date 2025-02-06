@@ -3,9 +3,11 @@ use crate::error::AppError;
 use crate::model::entity::admin_user;
 use crate::model::entity::prelude::AdminUser;
 use crate::IdHelper;
+use anyhow::anyhow;
 use sea_orm::{ActiveModelTrait, EntityTrait};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Row};
+
 
 #[derive(Clone, Debug, Deserialize, FromRow, Serialize,Default)]
 pub struct AdminUserD {
@@ -19,7 +21,7 @@ pub struct AdminUserD {
 pub async fn get_user(id: &str) -> Result<admin_user::Model, AppError> {
     let conn = &REPOSITORY.get().expect("").sea_orm;
     let option = AdminUser::find_by_id(id).one(conn).await?;
-    Ok(option.unwrap())
+    option.ok_or(anyhow!("User not found").into())
 }
 pub async fn create_user(user_name: &str, password: &str) -> Result<i32, AppError> {
     println!("{}", IdHelper::next_id().to_string());

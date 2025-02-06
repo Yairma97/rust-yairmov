@@ -2,25 +2,17 @@
 pub mod user;
 
 use crate::error::AppError;
-use axum::{
-    body::{Body, Bytes},
-    error_handling::HandleErrorLayer,
-    extract::Request,
-    http::StatusCode,
-    middleware::{self, Next},
-    response::{IntoResponse, Response},
-    Router,
-};
+use axum::{body::{Body, Bytes}, error_handling::HandleErrorLayer, extract::Request, http::StatusCode, middleware::{self, Next}, response::{IntoResponse, Response}, Json, Router};
 use common_token::app_state::AppState;
 use http_body_util::BodyExt;
 use std::time::Duration;
-use tower::{BoxError, ServiceBuilder};
+use tower::{BoxError, MakeService, ServiceBuilder};
 use tower_http::trace::TraceLayer;
 
 pub fn routes(state: AppState) -> Router {
     // don't change layer order, or errors happen...
     let middleware_stack = ServiceBuilder::new()
-        .layer(HandleErrorLayer::new(handle_error))
+        .layer(HandleErrorLayer::new(handle_panic))
         .timeout(Duration::from_secs(30))
         .layer(TraceLayer::new_for_http())
         .layer(middleware::from_fn(print_request_response));
@@ -74,7 +66,7 @@ where
     Ok(bytes)
 }
 
-async fn handle_error( error: BoxError) -> impl IntoResponse {
+async fn handle_panic( error: BoxError) -> impl IntoResponse {
     if error.is::<tower::timeout::error::Elapsed>() {
         Ok(StatusCode::REQUEST_TIMEOUT)
     } else {
